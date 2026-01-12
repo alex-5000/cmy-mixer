@@ -3,30 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mixeur CMY (Substractif)</title>
+  <title>Mélange substractif</title>
   <style>
     :root { --gap: 14px; --radius: 14px; }
+
     body{
-      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#fff; color:#111;
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#fff;
+      color:#111;
     }
+
+    /* Pleine largeur */
     .wrap{
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 18px;
+      max-width: none;
+      margin: 0;
+      padding: 12px;
     }
+
     .card{
       border:1px solid #e7e7e7;
       border-radius: var(--radius);
-      padding: 16px;
+      padding: 14px;
       box-shadow: 0 6px 18px rgba(0,0,0,.06);
       background:#fff;
     }
 
-    /* Layout paysage : visualiseur large, contrôles à côté (ou dessous sur mobile) */
+    /* Layout paysage : viewer large, controls à côté, dessous sur mobile */
     .grid{
       display:grid;
-      grid-template-columns: 1.4fr 1fr;
+      grid-template-columns: 1.6fr 1fr;
       gap: var(--gap);
       align-items: stretch;
     }
@@ -38,15 +44,16 @@
       border-radius: calc(var(--radius) + 6px);
       border:1px solid #ddd;
       background: #000;
-      min-height: 320px;
-      aspect-ratio: 16 / 9;      /* large > haut */
+      min-height: 200px;        /* moins haut */
+      aspect-ratio: 21 / 9;     /* plus large que haut */
       display:flex;
       align-items:flex-end;
       justify-content:space-between;
-      padding: 14px;
+      padding: 12px;
       position: relative;
       overflow:hidden;
     }
+
     .viewer .badge{
       background: rgba(255,255,255,.88);
       border:1px solid rgba(0,0,0,.08);
@@ -57,8 +64,11 @@
       gap:10px;
       align-items:center;
     }
+
     .dot{
-      width: 10px; height: 10px; border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
       border:1px solid rgba(0,0,0,.2);
       display:inline-block;
     }
@@ -75,13 +85,16 @@
       gap: 10px;
       align-items:center;
     }
+
     .label{
       font-weight: 650;
       display:flex;
       align-items:center;
       gap: 8px;
     }
+
     input[type="range"]{ width:100%; }
+
     .value{
       text-align:right;
       font-variant-numeric: tabular-nums;
@@ -93,6 +106,7 @@
       gap: 10px;
       align-items:center;
     }
+
     button{
       border:1px solid #ddd;
       background:#fff;
@@ -102,9 +116,13 @@
       font-weight: 600;
     }
     button:hover{ background:#f6f6f6; }
+
     .mini{
-      font-size: 12px; opacity:.8; line-height:1.35;
+      font-size: 12px;
+      opacity:.8;
+      line-height:1.35;
     }
+
     .pill{
       border:1px solid #ddd;
       border-radius: 999px;
@@ -116,14 +134,18 @@
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="card">
-      <h1 style="margin:0 0 8px 0; font-size:20px;">Jeu de mélange substractif (CMY) + Blanc/Noir</h1>
-      <div class="mini">Objectif : comprendre comment <b>Cyan</b>, <b>Magenta</b>, <b>Jaune</b> retirent de la lumière (substractif). CMY à 100% → Noir.</div>
+      <h1 style="margin:0 0 8px 0; font-size:20px;">Mélange substractif</h1>
+      <div class="mini">
+        Objectif : comprendre comment <b>Cyan</b>, <b>Magenta</b>, <b>Jaune</b> retirent de la lumière (substractif).
+        CMY à 100% → Noir.
+      </div>
     </div>
 
-    <div style="height:14px"></div>
+    <div style="height:12px"></div>
 
     <div class="grid">
       <div class="card">
@@ -169,23 +191,23 @@
 
         <div class="card">
           <h2 style="margin:0 0 10px 0; font-size:16px;">Blanc / Noir</h2>
+
           <div class="btnrow">
             <button id="whiteMinus" type="button">− Blanc</button>
             <button id="whitePlus" type="button">+ Blanc</button>
-            <span class="pill">pas: 5%</span>
           </div>
+
           <div style="height:10px"></div>
+
           <div class="btnrow">
             <button id="blackMinus" type="button">− Noir</button>
             <button id="blackPlus" type="button">+ Noir</button>
-            <span class="pill">pas: 5%</span>
           </div>
 
           <div style="height:12px"></div>
 
           <div class="btnrow">
             <button id="reset" type="button">Reset</button>
-            <button id="random" type="button">Défi aléatoire</button>
           </div>
 
           <div class="mini" style="margin-top:10px;">
@@ -269,7 +291,7 @@
       blackPct.textContent = Math.round(state.black * 100) + "%";
     }
 
-    // Events sliders
+    // Sliders
     ["c","m","y"].forEach((k) => {
       inputs[k].addEventListener("input", (e) => {
         state[k] = Number(e.target.value);
@@ -277,26 +299,16 @@
       });
     });
 
-    // Buttons white/black
+    // Boutons Blanc/Noir
     $("whitePlus").addEventListener("click", () => { state.white = clamp01(state.white + state.step); render(); });
     $("whiteMinus").addEventListener("click", () => { state.white = clamp01(state.white - state.step); render(); });
     $("blackPlus").addEventListener("click", () => { state.black = clamp01(state.black + state.step); render(); });
     $("blackMinus").addEventListener("click", () => { state.black = clamp01(state.black - state.step); render(); });
 
+    // Reset
     $("reset").addEventListener("click", () => {
       state.c = 100; state.m = 100; state.y = 100;
       state.white = 0; state.black = 0;
-      inputs.c.value = state.c; inputs.m.value = state.m; inputs.y.value = state.y;
-      render();
-    });
-
-    $("random").addEventListener("click", () => {
-      state.c = Math.floor(Math.random()*101);
-      state.m = Math.floor(Math.random()*101);
-      state.y = Math.floor(Math.random()*101);
-      state.white = Math.round(Math.random()*10) / 10; // 0..1 par 0.1
-      state.black = Math.round(Math.random()*10) / 10;
-
       inputs.c.value = state.c; inputs.m.value = state.m; inputs.y.value = state.y;
       render();
     });
