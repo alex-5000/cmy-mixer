@@ -125,48 +125,6 @@
       border-color:#111;
     }
 
-    /* Free colors list */
-    .swatches{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      margin-top: 6px;
-    }
-
-    .swatchBtn{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      border:1px solid #ddd;
-      background:#fff;
-      border-radius: 14px;
-      padding: 10px 12px;
-      cursor:pointer;
-      width: 100%;
-      text-align:left;
-      transition: transform .02s ease;
-    }
-    .swatchBtn:active{ transform: scale(.99); }
-    .swatchBtn.selected{
-      border-color:#111;
-      box-shadow: 0 0 0 2px rgba(0,0,0,.08) inset;
-    }
-
-    .swatchChip{
-      width:22px; height:22px;
-      border-radius: 8px;
-      border:1px solid rgba(0,0,0,.2);
-      background: repeating-linear-gradient(45deg, #f2f2f2, #f2f2f2 6px, #fff 6px, #fff 12px);
-      flex:0 0 auto;
-    }
-    .swatchText{
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      font-weight:700;
-      font-size: 13px;
-    }
-
     /* Image sampler (scroll if tall) */
     .imgBox{
       border:1px dashed #d7d7d7;
@@ -191,15 +149,13 @@
       cursor: crosshair;
     }
 
-    .hidden{ display:none !important; }
-
     /* Blanc/Noir inside viewer */
     .wbPanel{
       display:flex;
       gap:10px;
       align-items:center;
       flex-wrap:wrap;
-      max-width: 65%;
+      max-width: 70%;
     }
     .wbGroup{
       display:flex;
@@ -217,16 +173,109 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* Free colors list: each item is one box */
+    .swatches{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .colorCard{
+      border:1px solid #e7e7e7;
+      border-radius: 14px;
+      padding: 10px;
+      background:#fff;
+      box-shadow: 0 3px 12px rgba(0,0,0,.04);
+    }
+
+    .colorHeader{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+
+    .colorBtn{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border:1px solid #ddd;
+      background:#fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      text-align:left;
+      transition: transform .02s ease;
+      flex: 1 1 220px;
+      min-width: 220px;
+    }
+    .colorBtn:active{ transform: scale(.99); }
+    .colorBtn.selected{
+      border-color:#111;
+      box-shadow: 0 0 0 2px rgba(0,0,0,.08) inset;
+    }
+
+    .chip{
+      width:22px; height:22px;
+      border-radius: 8px;
+      border:1px solid rgba(0,0,0,.2);
+      background: repeating-linear-gradient(45deg, #f2f2f2, #f2f2f2 6px, #fff 6px, #fff 12px);
+      flex:0 0 auto;
+    }
+    .titleText{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-weight:800;
+      font-size: 13px;
+    }
+
+    .partInline{
+      flex: 1.2 1 240px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 240px;
+    }
+    .partLabel{
+      font-weight: 650;
+      font-size: 12px;
+      opacity: .85;
+      white-space: nowrap;
+    }
+    .partRange{
+      flex: 1 1 auto;
+      min-width: 120px;
+    }
+    .partPct{
+      width: 44px;
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      font-size: 12px;
+      opacity: .9;
+    }
+
+    .delBtn{
+      flex:0 0 auto;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
     .addRow{
       display:flex;
       gap:10px;
       align-items:center;
       justify-content:flex-start;
       margin-top: 10px;
+      flex-wrap:wrap;
     }
-    .danger{
-      border-color:#f0c2c2;
-    }
+
+    .hidden{ display:none !important; }
   </style>
 </head>
 
@@ -234,10 +283,12 @@
   <div class="wrap">
     <div class="card">
       <h1 style="margin:0 0 6px 0; font-size:20px;">Mélange substractif</h1>
-
+      <div class="mini">
+        Mode “Couleurs libres” : clique une couleur pour la sélectionner, puis clique dans l’image pour la remplacer.
+      </div>
 
       <div class="tabs" role="tablist" aria-label="Modes">
-        <button id="tabCMY" class="tab active" type="button">CMY</button>
+        <button id="tabCMY" class="tab active" type="button">Parts CMY</button>
         <button id="tabFREE" class="tab" type="button">Couleurs libres</button>
       </div>
     </div>
@@ -345,7 +396,6 @@
       mode: "CMY",
       c: 0, m: 0, y: 0,
 
-      // dynamic list
       colors: [
         { hex: null, part: 0 },
         { hex: null, part: 0 },
@@ -420,6 +470,7 @@
       panelCMY.classList.toggle("hidden", !isCMY);
       panelFREE.classList.toggle("hidden", isCMY);
       render();
+      sendHeight();
     }
     tabCMY.addEventListener("click", () => setMode("CMY"));
     tabFREE.addEventListener("click", () => setMode("FREE"));
@@ -432,32 +483,13 @@
     mIn.addEventListener("input", (e)=>{ state.m = Number(e.target.value); render(); });
     yIn.addEventListener("input", (e)=>{ state.y = Number(e.target.value); render(); });
 
-    // ---- White/Black buttons (in viewer) ----
+    // ---- White/Black ----
     $("whitePlus").addEventListener("click", ()=>{ state.white = clamp01(state.white + state.step); render(); });
     $("whiteMinus").addEventListener("click", ()=>{ state.white = clamp01(state.white - state.step); render(); });
     $("blackPlus").addEventListener("click", ()=>{ state.black = clamp01(state.black + state.step); render(); });
     $("blackMinus").addEventListener("click", ()=>{ state.black = clamp01(state.black - state.step); render(); });
-	  
-	function sendHeight(){
-  const h = document.documentElement.scrollHeight;
-  window.parent.postMessage(
-    { type: "cmy-resize", height: h },
-    "*"
-  );
-}
 
-// envoie après chaque rendu
-const _render = render;
-render = function(){
-  _render();
-  sendHeight();
-};
-
-// et aussi quand la fenêtre change
-window.addEventListener("resize", sendHeight);
-
-
-    // ---- Swatches dynamic rendering ----
+    // ---- Dynamic swatches ----
     const swatchesEl = $("swatches");
 
     function activateOnlyColor(idx){
@@ -478,7 +510,22 @@ window.addEventListener("resize", sendHeight);
     function setColor(idx, hex, makeOnly=true){
       state.colors[idx].hex = hex.toUpperCase();
       if (makeOnly) activateOnlyColor(idx);
-      setTargetColor(idx); // keep selection + refresh UI
+      setTargetColor(idx);
+      render();
+    }
+
+    function removeColor(idx){
+      // Minimum 1 couleur (change à 3 si tu veux minimum 3)
+      if (state.colors.length <= 1) return;
+
+      state.colors.splice(idx, 1);
+
+      if (state.targetColorIndex >= state.colors.length){
+        state.targetColorIndex = state.colors.length - 1;
+      }
+
+      renderSwatches();
+      setTargetColor(state.targetColorIndex);
       render();
     }
 
@@ -488,79 +535,96 @@ window.addEventListener("resize", sendHeight);
       state.colors.forEach((c, idx) => {
         const n = idx + 1;
 
-        const container = document.createElement("div");
+        const card = document.createElement("div");
+        card.className = "colorCard";
 
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "swatchBtn" + (idx === state.targetColorIndex ? " selected" : "");
-        btn.title = "Sélectionner cette couleur (et ouvrir le picker)";
-        btn.addEventListener("click", () => {
+        const header = document.createElement("div");
+        header.className = "colorHeader";
+
+        const colorBtn = document.createElement("button");
+        colorBtn.type = "button";
+        colorBtn.className = "colorBtn" + (idx === state.targetColorIndex ? " selected" : "");
+        colorBtn.title = "Sélectionner cette couleur (et ouvrir le picker)";
+        colorBtn.addEventListener("click", () => {
           setTargetColor(idx);
           picker.click();
         });
 
         const chip = document.createElement("span");
-        chip.className = "swatchChip";
+        chip.className = "chip";
         chip.style.background = c.hex
           ? c.hex
           : "repeating-linear-gradient(45deg,#f2f2f2,#f2f2f2 6px,#fff 6px,#fff 12px)";
 
-        const text = document.createElement("span");
-        text.className = "swatchText";
-        text.textContent = c.hex ? `Couleur ${n} — ${c.hex}` : `Couleur ${n} (vide)`;
+        const title = document.createElement("span");
+        title.className = "titleText";
+        title.textContent = c.hex ? `Couleur ${n} — ${c.hex}` : `Couleur ${n} (vide)`;
 
-        btn.appendChild(chip);
-        btn.appendChild(text);
+        colorBtn.appendChild(chip);
+        colorBtn.appendChild(title);
 
-        // hidden color input for this row
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "delBtn";
+        del.title = "Supprimer cette couleur";
+        del.textContent = "✕";
+        del.disabled = state.colors.length <= 1;
+        del.addEventListener("click", (e) => {
+          e.stopPropagation();
+          removeColor(idx);
+        });
+
+        // hidden color input
         const picker = document.createElement("input");
         picker.type = "color";
         picker.className = "hidden";
         picker.value = c.hex || "#ff0000";
         picker.addEventListener("input", (e) => setColor(idx, e.target.value, true));
 
-        // part row
-        const row = document.createElement("div");
-        row.className = "row";
-        row.style.marginTop = "10px";
+        // Part INLINE (between name and X)
+        const partInline = document.createElement("div");
+        partInline.className = "partInline";
 
-        const label = document.createElement("div");
-        label.className = "label";
-        label.textContent = `Couleur ${n}`;
+        const partLabel = document.createElement("div");
+        partLabel.className = "partLabel";
+        partLabel.textContent = "Part";
 
         const range = document.createElement("input");
         range.type = "range";
         range.min = "0";
         range.max = "100";
         range.value = String(c.part || 0);
+        range.className = "partRange";
         range.addEventListener("input", (e) => {
           state.colors[idx].part = Number(e.target.value);
-          valueSpan.textContent = String(state.colors[idx].part);
+          pct.textContent = String(state.colors[idx].part) + "%";
           render();
         });
 
-        const valBox = document.createElement("div");
-        valBox.className = "value";
-        const valueSpan = document.createElement("span");
-        valueSpan.textContent = String(c.part || 0);
-        valBox.appendChild(valueSpan);
-        valBox.appendChild(document.createTextNode("%"));
+        const pct = document.createElement("div");
+        pct.className = "partPct";
+        pct.textContent = String(c.part || 0) + "%";
 
-        row.appendChild(label);
-        row.appendChild(range);
-        row.appendChild(valBox);
+        partInline.appendChild(partLabel);
+        partInline.appendChild(range);
+        partInline.appendChild(pct);
 
-        container.appendChild(btn);
-        container.appendChild(picker);
-        container.appendChild(row);
+        // Header order: [colorBtn] [partInline] [X]
+        header.appendChild(colorBtn);
+        header.appendChild(partInline);
+        header.appendChild(del);
 
-        swatchesEl.appendChild(container);
+        card.appendChild(header);
+        card.appendChild(picker);
+
+        swatchesEl.appendChild(card);
       });
+
+      sendHeight();
     }
 
     $("addColorBtn").addEventListener("click", () => {
       state.colors.push({ hex: null, part: 0 });
-      // select the new color as target
       setTargetColor(state.colors.length - 1);
       renderSwatches();
       render();
@@ -586,7 +650,6 @@ window.addEventListener("resize", sendHeight);
         const wrap = imgCanvas.parentElement;
         const maxW = wrap.clientWidth;
 
-        // always fit to width, keep height (scroll container handles tall)
         const scale = maxW / img.width;
         const w = Math.round(img.width * scale);
         const h = Math.round(img.height * scale);
@@ -602,6 +665,7 @@ window.addEventListener("resize", sendHeight);
         setTargetColor(state.targetColorIndex);
 
         URL.revokeObjectURL(url);
+        sendHeight();
       };
 
       img.onerror = () => {
@@ -620,6 +684,7 @@ window.addEventListener("resize", sendHeight);
       state.imgLoaded = false;
       imgDeleteBtn.classList.add("hidden");
       setTargetColor(state.targetColorIndex);
+      sendHeight();
     });
 
     imgCanvas.addEventListener("click", (ev) => {
@@ -653,9 +718,10 @@ window.addEventListener("resize", sendHeight);
       state.white = 0;
       state.black = 0;
 
-      setTargetColor(0);
       renderSwatches();
+      setTargetColor(0);
       render();
+      sendHeight();
     });
 
     // ---- Render ----
@@ -682,7 +748,16 @@ window.addEventListener("resize", sendHeight);
 
       whitePct.textContent = Math.round(state.white*100) + "%";
       blackPct.textContent = Math.round(state.black*100) + "%";
+
+      sendHeight();
     }
+
+    // ---- iframe auto-height (postMessage) ----
+    function sendHeight(){
+      const h = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: "cmy-resize", height: h }, "*");
+    }
+    window.addEventListener("resize", sendHeight);
 
     // Init
     renderSwatches();
