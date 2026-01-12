@@ -189,13 +189,14 @@
       box-shadow: 0 3px 12px rgba(0,0,0,.04);
     }
 
-    .colorHeader{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:wrap;
-    }
+/* Empêche le X de passer à la ligne */
+.colorHeader{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap: nowrap;   /* <-- IMPORTANT */
+}
 
     .colorBtn{
       display:flex;
@@ -208,8 +209,8 @@
       cursor:pointer;
       text-align:left;
       transition: transform .02s ease;
-      flex: 1 1 220px;
-      min-width: 220px;
+  flex: 1 1 auto;
+  min-width: 0;        /* <-- IMPORTANT */
     }
     .colorBtn:active{ transform: scale(.99); }
     .colorBtn.selected{
@@ -233,11 +234,11 @@
     }
 
     .partInline{
-      flex: 1.2 1 240px;
+        flex: 0 1 320px;     /* peut shrink */
+  		min-width: 0;        /* <-- IMPORTANT */
       display:flex;
       align-items:center;
       gap:10px;
-      min-width: 240px;
     }
     .partLabel{
       font-weight: 650;
@@ -259,7 +260,8 @@
     }
 
     .delBtn{
-      flex:0 0 auto;
+  flex: 0 0 auto;
+  margin-left: auto;   /* <-- IMPORTANT */
       padding: 10px 12px;
       border-radius: 14px;
       font-weight: 900;
