@@ -14,12 +14,7 @@
       color:#111;
     }
 
-    /* Pleine largeur */
-    .wrap{
-      max-width: none;
-      margin: 0;
-      padding: 12px;
-    }
+    .wrap{ max-width:none; margin:0; padding:12px; }
 
     .card{
       border:1px solid #e7e7e7;
@@ -29,7 +24,6 @@
       background:#fff;
     }
 
-    /* Layout paysage : viewer large, controls à côté, dessous sur mobile */
     .grid{
       display:grid;
       grid-template-columns: 1.6fr 1fr;
@@ -43,19 +37,18 @@
     .viewer{
       border-radius: calc(var(--radius) + 6px);
       border:1px solid #ddd;
-      background: #000;
-      min-height: 200px;        /* moins haut */
-      aspect-ratio: 21 / 9;     /* plus large que haut */
+      background: #fff;
+      min-height: 200px;
+      aspect-ratio: 21 / 9;
       display:flex;
       align-items:flex-end;
       justify-content:space-between;
       padding: 12px;
-      position: relative;
       overflow:hidden;
     }
 
-    .viewer .badge{
-      background: rgba(255,255,255,.88);
+    .badge{
+      background: rgba(255,255,255,.9);
       border:1px solid rgba(0,0,0,.08);
       border-radius: 999px;
       padding: 8px 10px;
@@ -66,39 +59,31 @@
     }
 
     .dot{
-      width: 10px;
-      height: 10px;
+      width: 10px; height: 10px;
       border-radius: 50%;
       border:1px solid rgba(0,0,0,.2);
       display:inline-block;
     }
 
-    .controls{
-      display:flex;
-      flex-direction:column;
-      gap: var(--gap);
-    }
+    .controls{ display:flex; flex-direction:column; gap: var(--gap); }
 
     .row{
       display:grid;
-      grid-template-columns: 110px 1fr 56px;
+      grid-template-columns: 140px 1fr 56px;
       gap: 10px;
       align-items:center;
     }
 
     .label{
-      font-weight: 650;
+      font-weight:650;
       display:flex;
       align-items:center;
-      gap: 8px;
+      gap:8px;
+      white-space:nowrap;
     }
 
     input[type="range"]{ width:100%; }
-
-    .value{
-      text-align:right;
-      font-variant-numeric: tabular-nums;
-    }
+    .value{ text-align:right; font-variant-numeric: tabular-nums; }
 
     .btnrow{
       display:flex;
@@ -113,35 +98,94 @@
       padding:10px 12px;
       border-radius: 12px;
       cursor:pointer;
-      font-weight: 600;
+      font-weight: 650;
     }
     button:hover{ background:#f6f6f6; }
 
-    .mini{
-      font-size: 12px;
-      opacity:.8;
-      line-height:1.35;
+    .mini{ font-size:12px; opacity:.82; line-height:1.35; }
+
+    /* Toggle tabs */
+    .tabs{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .tab{
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid #ddd;
+      background:#fff;
+      cursor:pointer;
+      font-weight:700;
+    }
+    .tab.active{
+      background:#111;
+      color:#fff;
+      border-color:#111;
     }
 
-    .pill{
-      border:1px solid #ddd;
-      border-radius: 999px;
-      padding: 8px 10px;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      font-variant-numeric: tabular-nums;
+    /* Free colors UI */
+    .swatches{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 6px;
     }
+    .swatchRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .swatchBtn{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border:1px solid #ddd;
+      background:#fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      flex: 1;
+      min-width: 0;
+    }
+    .swatchChip{
+      width:22px; height:22px;
+      border-radius: 8px;
+      border:1px solid rgba(0,0,0,.2);
+      background: repeating-linear-gradient(45deg, #f2f2f2, #f2f2f2 6px, #fff 6px, #fff 12px);
+      flex:0 0 auto;
+    }
+    .swatchText{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-weight:700;
+      font-size: 13px;
+    }
+    .swatchActions{
+      display:flex;
+      gap:10px;
+      flex:0 0 auto;
+    }
+
+    .hidden{ display:none !important; }
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <div class="card">
-      <h1 style="margin:0 0 8px 0; font-size:20px;">Mélange substractif</h1>
+      <h1 style="margin:0 0 6px 0; font-size:20px;">Mélange substractif</h1>
       <div class="mini">
-        Objectif : comprendre comment <b>Cyan</b>, <b>Magenta</b>, <b>Jaune</b> retirent de la lumière (substractif).
-        CMY à 100% → Noir.
+        CMY = mélange substractif (C=M=Y à 100% → Noir). <br>
+        Mode “Couleurs libres” = mélange de 3 couleurs choisies (parts) + Blanc/Noir.
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Modes">
+        <button id="tabCMY" class="tab active" type="button">Parts CMY</button>
+        <button id="tabFREE" class="tab" type="button">Couleurs libres</button>
       </div>
     </div>
 
@@ -152,43 +196,118 @@
         <div id="viewer" class="viewer">
           <div class="badge">
             <span class="dot" id="dot" aria-hidden="true"></span>
-            <span id="hex">#000000</span>
-            <span id="rgb">rgb(0,0,0)</span>
+            <span id="hex">#FFFFFF</span>
+            <span id="rgb">rgb(255,255,255)</span>
           </div>
           <div class="badge">
-            <span class="pill">Blanc: <span id="whitePct">0%</span></span>
-            <span class="pill">Noir: <span id="blackPct">0%</span></span>
+            <span>Blanc: <span id="whitePct">0%</span></span>
+            <span>•</span>
+            <span>Noir: <span id="blackPct">0%</span></span>
           </div>
         </div>
       </div>
 
       <div class="controls">
-        <div class="card">
+
+        <!-- CMY MODE -->
+        <div id="panelCMY" class="card">
           <h2 style="margin:0 0 10px 0; font-size:16px;">Parts CMY</h2>
 
           <div class="row">
             <div class="label"><span class="dot" style="background:cyan;"></span>Cyan</div>
-            <input id="c" type="range" min="0" max="100" value="100" />
-            <div class="value"><span id="cVal">100</span>%</div>
+            <input id="c" type="range" min="0" max="100" value="0" />
+            <div class="value"><span id="cVal">0</span>%</div>
           </div>
 
           <div class="row">
             <div class="label"><span class="dot" style="background:magenta;"></span>Magenta</div>
-            <input id="m" type="range" min="0" max="100" value="100" />
-            <div class="value"><span id="mVal">100</span>%</div>
+            <input id="m" type="range" min="0" max="100" value="0" />
+            <div class="value"><span id="mVal">0</span>%</div>
           </div>
 
           <div class="row">
             <div class="label"><span class="dot" style="background:gold;"></span>Jaune</div>
-            <input id="y" type="range" min="0" max="100" value="100" />
-            <div class="value"><span id="yVal">100</span>%</div>
+            <input id="y" type="range" min="0" max="100" value="0" />
+            <div class="value"><span id="yVal">0</span>%</div>
           </div>
 
           <div class="mini" style="margin-top:10px;">
-            Astuce : mets une seule couleur à 100% (ex: Cyan), puis combine deux (C+M, M+Y, C+Y), puis les trois.
+            Astuce : 1 couleur, puis 2, puis 3. CMY à 100% = noir.
           </div>
         </div>
 
+        <!-- FREE MODE -->
+        <div id="panelFREE" class="card hidden">
+          <h2 style="margin:0 0 10px 0; font-size:16px;">Couleurs libres (3 slots)</h2>
+
+          <div class="mini" style="margin-bottom:10px;">
+            Clique un slot “vide” pour choisir une couleur. Quand tu choisis une couleur, elle devient la seule active (parts des autres = 0).  
+            Pipette : si disponible, elle peut capturer une couleur depuis l’écran (selon navigateur / iframe).
+          </div>
+
+          <div class="swatches">
+            <!-- Slot 1 -->
+            <div>
+              <div class="swatchRow">
+                <button class="swatchBtn" id="swatchBtn1" type="button" title="Choisir une couleur">
+                  <span class="swatchChip" id="swatchChip1"></span>
+                  <span class="swatchText" id="swatchText1">Slot 1 (vide)</span>
+                </button>
+                <div class="swatchActions">
+                  <button id="pick1" type="button" title="Pipette">Pipette</button>
+                </div>
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <div class="label">Part Slot 1</div>
+                <input id="p1" type="range" min="0" max="100" value="0" />
+                <div class="value"><span id="p1Val">0</span>%</div>
+              </div>
+            </div>
+
+            <!-- Slot 2 -->
+            <div>
+              <div class="swatchRow">
+                <button class="swatchBtn" id="swatchBtn2" type="button" title="Choisir une couleur">
+                  <span class="swatchChip" id="swatchChip2"></span>
+                  <span class="swatchText" id="swatchText2">Slot 2 (vide)</span>
+                </button>
+                <div class="swatchActions">
+                  <button id="pick2" type="button" title="Pipette">Pipette</button>
+                </div>
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <div class="label">Part Slot 2</div>
+                <input id="p2" type="range" min="0" max="100" value="0" />
+                <div class="value"><span id="p2Val">0</span>%</div>
+              </div>
+            </div>
+
+            <!-- Slot 3 -->
+            <div>
+              <div class="swatchRow">
+                <button class="swatchBtn" id="swatchBtn3" type="button" title="Choisir une couleur">
+                  <span class="swatchChip" id="swatchChip3"></span>
+                  <span class="swatchText" id="swatchText3">Slot 3 (vide)</span>
+                </button>
+                <div class="swatchActions">
+                  <button id="pick3" type="button" title="Pipette">Pipette</button>
+                </div>
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <div class="label">Part Slot 3</div>
+                <input id="p3" type="range" min="0" max="100" value="0" />
+                <div class="value"><span id="p3Val">0</span>%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Color inputs hidden (fallback / picker) -->
+          <input id="color1" type="color" class="hidden" value="#ff0000" />
+          <input id="color2" type="color" class="hidden" value="#00ff00" />
+          <input id="color3" type="color" class="hidden" value="#0000ff" />
+        </div>
+
+        <!-- WHITE / BLACK -->
         <div class="card">
           <h2 style="margin:0 0 10px 0; font-size:16px;">Blanc / Noir</h2>
 
@@ -210,33 +329,79 @@
             <button id="reset" type="button">Reset</button>
           </div>
 
-          <div class="mini" style="margin-top:10px;">
-            Blanc = “diluer” vers le blanc. Noir = assombrir. (Modèle simple, pédagogique.)
+          <div id="pipetteNote" class="mini" style="margin-top:10px;">
+            Pipette : peut ne pas fonctionner selon navigateur / permissions d’iframe.
           </div>
         </div>
+
       </div>
     </div>
   </div>
 
   <script>
-    // État
-    const state = {
-      c: 100, m: 100, y: 100,
-      white: 0, // 0..1
-      black: 0, // 0..1
-      step: 0.05
-    };
-
-    // Helpers
+    const $ = (id) => document.getElementById(id);
     const clamp01 = (x) => Math.min(1, Math.max(0, x));
     const clamp255 = (x) => Math.min(255, Math.max(0, Math.round(x)));
 
+    // State
+    const state = {
+      mode: "CMY", // "CMY" | "FREE"
+
+      // CMY (0..100)
+      c: 0, m: 0, y: 0,
+
+      // Free slots: each has color (hex or null) and part (0..100)
+      slots: [
+        { hex: null, part: 0 },
+        { hex: null, part: 0 },
+        { hex: null, part: 0 },
+      ],
+
+      // White/Black (0..1)
+      white: 0,
+      black: 0,
+      step: 0.05,
+    };
+
+    // --- Color math ---
     function cmyToRgb(c, m, y){
-      // c,m,y: 0..1
+      // c,m,y: 0..1 (substractif)
       const r = 255 * (1 - c);
       const g = 255 * (1 - m);
       const b = 255 * (1 - y);
       return { r, g, b };
+    }
+
+    function hexToRgb(hex){
+      const h = hex.replace("#","").trim();
+      const r = parseInt(h.slice(0,2), 16);
+      const g = parseInt(h.slice(2,4), 16);
+      const b = parseInt(h.slice(4,6), 16);
+      return { r, g, b };
+    }
+
+    function mixFreeSlots(slots){
+      // Weighted average of selected colors.
+      // If no active parts or no colors -> base white.
+      let sum = 0;
+      let r = 0, g = 0, b = 0;
+
+      for (const s of slots){
+        if (!s.hex) continue;
+        const w = Math.max(0, Number(s.part) || 0);
+        if (w <= 0) continue;
+        const rgb = hexToRgb(s.hex);
+        sum += w;
+        r += rgb.r * w;
+        g += rgb.g * w;
+        b += rgb.b * w;
+      }
+
+      if (sum <= 0){
+        return { r:255, g:255, b:255 };
+      }
+
+      return { r: r / sum, g: g / sum, b: b / sum };
     }
 
     function applyWhiteBlack(rgb, white, black){
@@ -255,51 +420,136 @@
 
     function rgbToHex({r,g,b}){
       const toHex = (n) => n.toString(16).padStart(2, "0");
-      return "#" + toHex(r) + toHex(g) + toHex(b);
+      return ("#" + toHex(r) + toHex(g) + toHex(b)).toUpperCase();
     }
 
-    // DOM
-    const $ = (id) => document.getElementById(id);
-
-    const inputs = { c: $("c"), m: $("m"), y: $("y") };
-    const vals = { c: $("cVal"), m: $("mVal"), y: $("yVal") };
-
+    // --- UI refs ---
     const viewer = $("viewer");
+    const dot = $("dot");
     const hexEl = $("hex");
     const rgbEl = $("rgb");
-    const dot = $("dot");
-
     const whitePct = $("whitePct");
     const blackPct = $("blackPct");
 
-    function render(){
-      vals.c.textContent = state.c;
-      vals.m.textContent = state.m;
-      vals.y.textContent = state.y;
+    const tabCMY = $("tabCMY");
+    const tabFREE = $("tabFREE");
+    const panelCMY = $("panelCMY");
+    const panelFREE = $("panelFREE");
 
-      const base = cmyToRgb(state.c/100, state.m/100, state.y/100);
-      const out = applyWhiteBlack(base, state.white, state.black);
+    // CMY inputs
+    const inputsCMY = { c:$("c"), m:$("m"), y:$("y") };
+    const valsCMY = { c:$("cVal"), m:$("mVal"), y:$("yVal") };
 
-      const hex = rgbToHex(out);
-      viewer.style.background = `rgb(${out.r},${out.g},${out.b})`;
-      dot.style.background = `rgb(${out.r},${out.g},${out.b})`;
+    // FREE inputs
+    const p = [null, $("p1"), $("p2"), $("p3")];
+    const pv = [null, $("p1Val"), $("p2Val"), $("p3Val")];
 
-      hexEl.textContent = hex.toUpperCase();
-      rgbEl.textContent = `rgb(${out.r},${out.g},${out.b})`;
+    const swatchChip = [null, $("swatchChip1"), $("swatchChip2"), $("swatchChip3")];
+    const swatchText = [null, $("swatchText1"), $("swatchText2"), $("swatchText3")];
+    const swatchBtn = [null, $("swatchBtn1"), $("swatchBtn2"), $("swatchBtn3")];
 
-      whitePct.textContent = Math.round(state.white * 100) + "%";
-      blackPct.textContent = Math.round(state.black * 100) + "%";
+    const colorInput = [null, $("color1"), $("color2"), $("color3")];
+
+    // --- Mode switching ---
+    function setMode(mode){
+      state.mode = mode;
+      const isCMY = mode === "CMY";
+      tabCMY.classList.toggle("active", isCMY);
+      tabFREE.classList.toggle("active", !isCMY);
+      panelCMY.classList.toggle("hidden", !isCMY);
+      panelFREE.classList.toggle("hidden", isCMY);
+      render();
     }
 
-    // Sliders
+    tabCMY.addEventListener("click", () => setMode("CMY"));
+    tabFREE.addEventListener("click", () => setMode("FREE"));
+
+    // --- “Only selected color affects” behavior ---
+    function activateOnlySlot(idx){
+      for (let i=0;i<3;i++){
+        state.slots[i].part = (i === idx) ? 100 : 0;
+      }
+      // sync sliders
+      for (let i=1;i<=3;i++){
+        p[i].value = state.slots[i-1].part;
+        pv[i].textContent = state.slots[i-1].part;
+      }
+    }
+
+    // --- Pickers ---
+    async function eyedropperPick(){
+      if (!("EyeDropper" in window)) {
+        throw new Error("EyeDropper not supported");
+      }
+      const ed = new EyeDropper();
+      const result = await ed.open(); // { sRGBHex: "#RRGGBB" }
+      return result.sRGBHex.toUpperCase();
+    }
+
+    function setSlotColor(idx, hex){
+      state.slots[idx].hex = hex.toUpperCase();
+      // When user selects a color: make it the only active one
+      activateOnlySlot(idx);
+      render();
+    }
+
+    function updateSwatchUI(){
+      for (let i=1;i<=3;i++){
+        const s = state.slots[i-1];
+        pv[i].textContent = s.part;
+
+        if (s.hex){
+          swatchChip[i].style.background = s.hex;
+          swatchText[i].textContent = `Slot ${i} — ${s.hex}`;
+        } else {
+          swatchChip[i].style.background = "repeating-linear-gradient(45deg,#f2f2f2,#f2f2f2 6px,#fff 6px,#fff 12px)";
+          swatchText[i].textContent = `Slot ${i} (vide)`;
+        }
+      }
+    }
+
+    // Clicking swatch uses normal color picker
+    for (let i=1;i<=3;i++){
+      swatchBtn[i].addEventListener("click", () => {
+        colorInput[i].click();
+      });
+      colorInput[i].addEventListener("input", (e) => {
+        setSlotColor(i-1, e.target.value);
+      });
+    }
+
+    // Pipette buttons per slot
+    $("pick1").addEventListener("click", async () => {
+      try { setSlotColor(0, await eyedropperPick()); }
+      catch(e){ alert("Pipette indisponible ici. Essaie Chrome/Edge, ou utilise le sélecteur de couleur."); }
+    });
+    $("pick2").addEventListener("click", async () => {
+      try { setSlotColor(1, await eyedropperPick()); }
+      catch(e){ alert("Pipette indisponible ici. Essaie Chrome/Edge, ou utilise le sélecteur de couleur."); }
+    });
+    $("pick3").addEventListener("click", async () => {
+      try { setSlotColor(2, await eyedropperPick()); }
+      catch(e){ alert("Pipette indisponible ici. Essaie Chrome/Edge, ou utilise le sélecteur de couleur."); }
+    });
+
+    // FREE sliders
+    for (let i=1;i<=3;i++){
+      p[i].addEventListener("input", (e) => {
+        state.slots[i-1].part = Number(e.target.value);
+        pv[i].textContent = state.slots[i-1].part;
+        render();
+      });
+    }
+
+    // CMY sliders
     ["c","m","y"].forEach((k) => {
-      inputs[k].addEventListener("input", (e) => {
+      inputsCMY[k].addEventListener("input", (e) => {
         state[k] = Number(e.target.value);
         render();
       });
     });
 
-    // Boutons Blanc/Noir
+    // White / Black buttons
     $("whitePlus").addEventListener("click", () => { state.white = clamp01(state.white + state.step); render(); });
     $("whiteMinus").addEventListener("click", () => { state.white = clamp01(state.white - state.step); render(); });
     $("blackPlus").addEventListener("click", () => { state.black = clamp01(state.black + state.step); render(); });
@@ -307,11 +557,64 @@
 
     // Reset
     $("reset").addEventListener("click", () => {
-      state.c = 100; state.m = 100; state.y = 100;
-      state.white = 0; state.black = 0;
-      inputs.c.value = state.c; inputs.m.value = state.m; inputs.y.value = state.y;
+      // CMY empty
+      state.c = 0; state.m = 0; state.y = 0;
+      inputsCMY.c.value = 0; inputsCMY.m.value = 0; inputsCMY.y.value = 0;
+
+      // FREE empty
+      state.slots = [
+        { hex: null, part: 0 },
+        { hex: null, part: 0 },
+        { hex: null, part: 0 },
+      ];
+      for (let i=1;i<=3;i++){
+        p[i].value = 0;
+        pv[i].textContent = "0";
+      }
+
+      // white/black
+      state.white = 0;
+      state.black = 0;
+
       render();
     });
+
+    function render(){
+      // CMY values
+      valsCMY.c.textContent = state.c;
+      valsCMY.m.textContent = state.m;
+      valsCMY.y.textContent = state.y;
+
+      // Base color by mode
+      let base;
+      if (state.mode === "CMY"){
+        base = cmyToRgb(state.c/100, state.m/100, state.y/100);
+      } else {
+        base = mixFreeSlots(state.slots);
+      }
+
+      const out = applyWhiteBlack(base, state.white, state.black);
+
+      viewer.style.background = `rgb(${out.r},${out.g},${out.b})`;
+      dot.style.background = `rgb(${out.r},${out.g},${out.b})`;
+
+      const hex = rgbToHex(out);
+      hexEl.textContent = hex;
+      rgbEl.textContent = `rgb(${out.r},${out.g},${out.b})`;
+
+      whitePct.textContent = Math.round(state.white*100) + "%";
+      blackPct.textContent = Math.round(state.black*100) + "%";
+
+      updateSwatchUI();
+
+      // Note pipette support
+      const note = $("pipetteNote");
+      if ("EyeDropper" in window){
+        note.textContent = "Pipette : disponible (selon permissions d’iframe).";
+      } else {
+        note.textContent = "Pipette : non supportée par ce navigateur. Utilise le sélecteur de couleur.";
+      }
+    }
 
     // Init
     render();
