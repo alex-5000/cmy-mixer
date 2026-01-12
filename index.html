@@ -45,6 +45,7 @@
       justify-content:space-between;
       padding: 12px;
       overflow:hidden;
+      position: relative;
     }
 
     .badge{
@@ -69,7 +70,7 @@
 
     .row{
       display:grid;
-      grid-template-columns: 140px 1fr 56px;
+      grid-template-columns: 160px 1fr 56px;
       gap: 10px;
       align-items:center;
     }
@@ -104,7 +105,6 @@
 
     .mini{ font-size:12px; opacity:.82; line-height:1.35; }
 
-    /* Toggle tabs */
     .tabs{
       display:flex;
       gap:10px;
@@ -125,19 +125,14 @@
       border-color:#111;
     }
 
-    /* Free colors UI */
+    /* Free colors list */
     .swatches{
       display:grid;
       grid-template-columns: 1fr;
       gap: 10px;
       margin-top: 6px;
     }
-    .swatchRow{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-    }
+
     .swatchBtn{
       display:flex;
       align-items:center;
@@ -147,9 +142,16 @@
       border-radius: 14px;
       padding: 10px 12px;
       cursor:pointer;
-      flex: 1;
-      min-width: 0;
+      width: 100%;
+      text-align:left;
+      transition: transform .02s ease;
     }
+    .swatchBtn:active{ transform: scale(.99); }
+    .swatchBtn.selected{
+      border-color:#111;
+      box-shadow: 0 0 0 2px rgba(0,0,0,.08) inset;
+    }
+
     .swatchChip{
       width:22px; height:22px;
       border-radius: 8px;
@@ -164,13 +166,67 @@
       font-weight:700;
       font-size: 13px;
     }
-    .swatchActions{
+
+    /* Image sampler (scroll if tall) */
+    .imgBox{
+      border:1px dashed #d7d7d7;
+      border-radius: 14px;
+      padding: 10px;
       display:flex;
+      flex-direction:column;
       gap:10px;
-      flex:0 0 auto;
+    }
+    .imgCanvasWrap{
+      border:1px solid #eee;
+      border-radius: 14px;
+      background:#fafafa;
+      max-height: 200px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    canvas{
+      display:block;
+      width:100%;
+      height:auto;
+      cursor: crosshair;
     }
 
     .hidden{ display:none !important; }
+
+    /* Blanc/Noir inside viewer */
+    .wbPanel{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      max-width: 65%;
+    }
+    .wbGroup{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .wbBtn{
+      padding:8px 10px;
+      border-radius: 12px;
+      font-weight: 750;
+    }
+    .wbRead{
+      font-size: 12px;
+      opacity: .9;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .addRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-start;
+      margin-top: 10px;
+    }
+    .danger{
+      border-color:#f0c2c2;
+    }
   </style>
 </head>
 
@@ -178,13 +234,10 @@
   <div class="wrap">
     <div class="card">
       <h1 style="margin:0 0 6px 0; font-size:20px;">Mélange substractif</h1>
-      <div class="mini">
-        CMY = mélange substractif (C=M=Y à 100% → Noir). <br>
-        Mode “Couleurs libres” = mélange de 3 couleurs choisies (parts) + Blanc/Noir.
-      </div>
+
 
       <div class="tabs" role="tablist" aria-label="Modes">
-        <button id="tabCMY" class="tab active" type="button">Parts CMY</button>
+        <button id="tabCMY" class="tab active" type="button">CMY</button>
         <button id="tabFREE" class="tab" type="button">Couleurs libres</button>
       </div>
     </div>
@@ -192,6 +245,7 @@
     <div style="height:12px"></div>
 
     <div class="grid">
+      <!-- LEFT -->
       <div class="card">
         <div id="viewer" class="viewer">
           <div class="badge">
@@ -199,17 +253,29 @@
             <span id="hex">#FFFFFF</span>
             <span id="rgb">rgb(255,255,255)</span>
           </div>
-          <div class="badge">
-            <span>Blanc: <span id="whitePct">0%</span></span>
-            <span>•</span>
-            <span>Noir: <span id="blackPct">0%</span></span>
+
+          <div class="wbPanel badge" aria-label="Blanc et Noir">
+            <div class="wbGroup">
+              <button id="whiteMinus" class="wbBtn" type="button">− Blanc</button>
+              <button id="whitePlus" class="wbBtn" type="button">+ Blanc</button>
+              <span class="wbRead">(<span id="whitePct">0%</span>)</span>
+            </div>
+            <span style="opacity:.5;">•</span>
+            <div class="wbGroup">
+              <button id="blackMinus" class="wbBtn" type="button">− Noir</button>
+              <button id="blackPlus" class="wbBtn" type="button">+ Noir</button>
+              <span class="wbRead">(<span id="blackPct">0%</span>)</span>
+            </div>
+            <span style="opacity:.5;">•</span>
+            <button id="reset" class="wbBtn" type="button">Reset</button>
           </div>
         </div>
       </div>
 
+      <!-- RIGHT -->
       <div class="controls">
 
-        <!-- CMY MODE -->
+        <!-- CMY -->
         <div id="panelCMY" class="card">
           <h2 style="margin:0 0 10px 0; font-size:16px;">Parts CMY</h2>
 
@@ -236,101 +302,33 @@
           </div>
         </div>
 
-        <!-- FREE MODE -->
+        <!-- FREE -->
         <div id="panelFREE" class="card hidden">
-          <h2 style="margin:0 0 10px 0; font-size:16px;">Couleurs libres (3 slots)</h2>
+          <h2 style="margin:0 0 10px 0; font-size:16px;">Couleurs libres</h2>
 
           <div class="mini" style="margin-bottom:10px;">
-            Clique un slot “vide” pour choisir une couleur. Quand tu choisis une couleur, elle devient la seule active (parts des autres = 0).  
-            Pipette : si disponible, elle peut capturer une couleur depuis l’écran (selon navigateur / iframe).
+            1) Clique une couleur pour la sélectionner. 2) Clique dans l’image pour remplacer cette couleur.
           </div>
 
-          <div class="swatches">
-            <!-- Slot 1 -->
-            <div>
-              <div class="swatchRow">
-                <button class="swatchBtn" id="swatchBtn1" type="button" title="Choisir une couleur">
-                  <span class="swatchChip" id="swatchChip1"></span>
-                  <span class="swatchText" id="swatchText1">Slot 1 (vide)</span>
-                </button>
-                <div class="swatchActions">
-                  <button id="pick1" type="button" title="Pipette">Pipette</button>
-                </div>
-              </div>
-              <div class="row" style="margin-top:10px;">
-                <div class="label">Part Slot 1</div>
-                <input id="p1" type="range" min="0" max="100" value="0" />
-                <div class="value"><span id="p1Val">0</span>%</div>
-              </div>
+          <div class="imgBox">
+            <div class="btnrow">
+              <button id="imgUploadBtn" type="button">Uploader une image</button>
+              <button id="imgDeleteBtn" type="button" class="hidden">Supprimer l’image</button>
             </div>
-
-            <!-- Slot 2 -->
-            <div>
-              <div class="swatchRow">
-                <button class="swatchBtn" id="swatchBtn2" type="button" title="Choisir une couleur">
-                  <span class="swatchChip" id="swatchChip2"></span>
-                  <span class="swatchText" id="swatchText2">Slot 2 (vide)</span>
-                </button>
-                <div class="swatchActions">
-                  <button id="pick2" type="button" title="Pipette">Pipette</button>
-                </div>
-              </div>
-              <div class="row" style="margin-top:10px;">
-                <div class="label">Part Slot 2</div>
-                <input id="p2" type="range" min="0" max="100" value="0" />
-                <div class="value"><span id="p2Val">0</span>%</div>
-              </div>
+            <input id="imgFile" type="file" accept="image/*" class="hidden" />
+            <div class="imgCanvasWrap">
+              <canvas id="imgCanvas"></canvas>
             </div>
-
-            <!-- Slot 3 -->
-            <div>
-              <div class="swatchRow">
-                <button class="swatchBtn" id="swatchBtn3" type="button" title="Choisir une couleur">
-                  <span class="swatchChip" id="swatchChip3"></span>
-                  <span class="swatchText" id="swatchText3">Slot 3 (vide)</span>
-                </button>
-                <div class="swatchActions">
-                  <button id="pick3" type="button" title="Pipette">Pipette</button>
-                </div>
-              </div>
-              <div class="row" style="margin-top:10px;">
-                <div class="label">Part Slot 3</div>
-                <input id="p3" type="range" min="0" max="100" value="0" />
-                <div class="value"><span id="p3Val">0</span>%</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Color inputs hidden (fallback / picker) -->
-          <input id="color1" type="color" class="hidden" value="#ff0000" />
-          <input id="color2" type="color" class="hidden" value="#00ff00" />
-          <input id="color3" type="color" class="hidden" value="#0000ff" />
-        </div>
-
-        <!-- WHITE / BLACK -->
-        <div class="card">
-          <h2 style="margin:0 0 10px 0; font-size:16px;">Blanc / Noir</h2>
-
-          <div class="btnrow">
-            <button id="whiteMinus" type="button">− Blanc</button>
-            <button id="whitePlus" type="button">+ Blanc</button>
+            <div class="mini" id="imgHint">Optionnel : charge une image, puis clique dedans pour prendre une couleur.</div>
           </div>
 
           <div style="height:10px"></div>
 
-          <div class="btnrow">
-            <button id="blackMinus" type="button">− Noir</button>
-            <button id="blackPlus" type="button">+ Noir</button>
-          </div>
+          <div id="swatches" class="swatches"></div>
 
-          <div style="height:12px"></div>
-
-          <div class="btnrow">
-            <button id="reset" type="button">Reset</button>
-          </div>
-
-          <div id="pipetteNote" class="mini" style="margin-top:10px;">
-            Pipette : peut ne pas fonctionner selon navigateur / permissions d’iframe.
+          <div class="addRow">
+            <button id="addColorBtn" type="button">+ Ajouter une couleur</button>
+            <div class="mini">Ajoute une nouvelle couleur au mélange.</div>
           </div>
         </div>
 
@@ -343,87 +341,64 @@
     const clamp01 = (x) => Math.min(1, Math.max(0, x));
     const clamp255 = (x) => Math.min(255, Math.max(0, Math.round(x)));
 
-    // State
     const state = {
-      mode: "CMY", // "CMY" | "FREE"
-
-      // CMY (0..100)
+      mode: "CMY",
       c: 0, m: 0, y: 0,
 
-      // Free slots: each has color (hex or null) and part (0..100)
-      slots: [
+      // dynamic list
+      colors: [
         { hex: null, part: 0 },
         { hex: null, part: 0 },
         { hex: null, part: 0 },
       ],
 
-      // White/Black (0..1)
+      targetColorIndex: 0,
+
       white: 0,
       black: 0,
       step: 0.05,
+
+      imgLoaded: false,
     };
 
-    // --- Color math ---
+    // ---- Color math ----
     function cmyToRgb(c, m, y){
-      // c,m,y: 0..1 (substractif)
-      const r = 255 * (1 - c);
-      const g = 255 * (1 - m);
-      const b = 255 * (1 - y);
-      return { r, g, b };
+      return { r: 255*(1-c), g: 255*(1-m), b: 255*(1-y) };
     }
 
     function hexToRgb(hex){
       const h = hex.replace("#","").trim();
-      const r = parseInt(h.slice(0,2), 16);
-      const g = parseInt(h.slice(2,4), 16);
-      const b = parseInt(h.slice(4,6), 16);
-      return { r, g, b };
+      return { r: parseInt(h.slice(0,2),16), g: parseInt(h.slice(2,4),16), b: parseInt(h.slice(4,6),16) };
     }
 
-    function mixFreeSlots(slots){
-      // Weighted average of selected colors.
-      // If no active parts or no colors -> base white.
-      let sum = 0;
-      let r = 0, g = 0, b = 0;
-
-      for (const s of slots){
-        if (!s.hex) continue;
-        const w = Math.max(0, Number(s.part) || 0);
+    function mixFree(colors){
+      let sum = 0, r = 0, g = 0, b = 0;
+      for (const c of colors){
+        if (!c.hex) continue;
+        const w = Math.max(0, Number(c.part)||0);
         if (w <= 0) continue;
-        const rgb = hexToRgb(s.hex);
+        const rgb = hexToRgb(c.hex);
         sum += w;
-        r += rgb.r * w;
-        g += rgb.g * w;
-        b += rgb.b * w;
+        r += rgb.r*w; g += rgb.g*w; b += rgb.b*w;
       }
-
-      if (sum <= 0){
-        return { r:255, g:255, b:255 };
-      }
-
-      return { r: r / sum, g: g / sum, b: b / sum };
+      if (sum <= 0) return { r:255, g:255, b:255 };
+      return { r:r/sum, g:g/sum, b:b/sum };
     }
 
     function applyWhiteBlack(rgb, white, black){
-      // white: blend toward 255
       let r = rgb.r + (255 - rgb.r) * white;
       let g = rgb.g + (255 - rgb.g) * white;
       let b = rgb.b + (255 - rgb.b) * white;
-
-      // black: scale down toward 0
-      r = r * (1 - black);
-      g = g * (1 - black);
-      b = b * (1 - black);
-
+      r = r*(1-black); g = g*(1-black); b = b*(1-black);
       return { r: clamp255(r), g: clamp255(g), b: clamp255(b) };
     }
 
     function rgbToHex({r,g,b}){
-      const toHex = (n) => n.toString(16).padStart(2, "0");
+      const toHex = (n) => n.toString(16).padStart(2,"0");
       return ("#" + toHex(r) + toHex(g) + toHex(b)).toUpperCase();
     }
 
-    // --- UI refs ---
+    // ---- Viewer UI ----
     const viewer = $("viewer");
     const dot = $("dot");
     const hexEl = $("hex");
@@ -431,26 +406,12 @@
     const whitePct = $("whitePct");
     const blackPct = $("blackPct");
 
+    // ---- Tabs ----
     const tabCMY = $("tabCMY");
     const tabFREE = $("tabFREE");
     const panelCMY = $("panelCMY");
     const panelFREE = $("panelFREE");
 
-    // CMY inputs
-    const inputsCMY = { c:$("c"), m:$("m"), y:$("y") };
-    const valsCMY = { c:$("cVal"), m:$("mVal"), y:$("yVal") };
-
-    // FREE inputs
-    const p = [null, $("p1"), $("p2"), $("p3")];
-    const pv = [null, $("p1Val"), $("p2Val"), $("p3Val")];
-
-    const swatchChip = [null, $("swatchChip1"), $("swatchChip2"), $("swatchChip3")];
-    const swatchText = [null, $("swatchText1"), $("swatchText2"), $("swatchText3")];
-    const swatchBtn = [null, $("swatchBtn1"), $("swatchBtn2"), $("swatchBtn3")];
-
-    const colorInput = [null, $("color1"), $("color2"), $("color3")];
-
-    // --- Mode switching ---
     function setMode(mode){
       state.mode = mode;
       const isCMY = mode === "CMY";
@@ -460,137 +421,235 @@
       panelFREE.classList.toggle("hidden", isCMY);
       render();
     }
-
     tabCMY.addEventListener("click", () => setMode("CMY"));
     tabFREE.addEventListener("click", () => setMode("FREE"));
 
-    // --- “Only selected color affects” behavior ---
-    function activateOnlySlot(idx){
-      for (let i=0;i<3;i++){
-        state.slots[i].part = (i === idx) ? 100 : 0;
-      }
-      // sync sliders
-      for (let i=1;i<=3;i++){
-        p[i].value = state.slots[i-1].part;
-        pv[i].textContent = state.slots[i-1].part;
+    // ---- CMY sliders ----
+    const cIn = $("c"), mIn = $("m"), yIn = $("y");
+    const cVal = $("cVal"), mVal = $("mVal"), yVal = $("yVal");
+
+    cIn.addEventListener("input", (e)=>{ state.c = Number(e.target.value); render(); });
+    mIn.addEventListener("input", (e)=>{ state.m = Number(e.target.value); render(); });
+    yIn.addEventListener("input", (e)=>{ state.y = Number(e.target.value); render(); });
+
+    // ---- White/Black buttons (in viewer) ----
+    $("whitePlus").addEventListener("click", ()=>{ state.white = clamp01(state.white + state.step); render(); });
+    $("whiteMinus").addEventListener("click", ()=>{ state.white = clamp01(state.white - state.step); render(); });
+    $("blackPlus").addEventListener("click", ()=>{ state.black = clamp01(state.black + state.step); render(); });
+    $("blackMinus").addEventListener("click", ()=>{ state.black = clamp01(state.black - state.step); render(); });
+
+    // ---- Swatches dynamic rendering ----
+    const swatchesEl = $("swatches");
+
+    function activateOnlyColor(idx){
+      for (let i=0;i<state.colors.length;i++){
+        state.colors[i].part = (i===idx) ? 100 : 0;
       }
     }
 
-    // --- Pickers ---
-    async function eyedropperPick(){
-      if (!("EyeDropper" in window)) {
-        throw new Error("EyeDropper not supported");
-      }
-      const ed = new EyeDropper();
-      const result = await ed.open(); // { sRGBHex: "#RRGGBB" }
-      return result.sRGBHex.toUpperCase();
+    function setTargetColor(idx){
+      state.targetColorIndex = Math.max(0, Math.min(idx, state.colors.length-1));
+      const msg = state.imgLoaded
+        ? `Clique dans l’image pour remplacer Couleur ${state.targetColorIndex+1}.`
+        : `Charge une image, puis clique dedans pour remplacer Couleur ${state.targetColorIndex+1}.`;
+      $("imgHint").textContent = msg;
+      renderSwatches();
     }
 
-    function setSlotColor(idx, hex){
-      state.slots[idx].hex = hex.toUpperCase();
-      // When user selects a color: make it the only active one
-      activateOnlySlot(idx);
+    function setColor(idx, hex, makeOnly=true){
+      state.colors[idx].hex = hex.toUpperCase();
+      if (makeOnly) activateOnlyColor(idx);
+      setTargetColor(idx); // keep selection + refresh UI
       render();
     }
 
-    function updateSwatchUI(){
-      for (let i=1;i<=3;i++){
-        const s = state.slots[i-1];
-        pv[i].textContent = s.part;
+    function renderSwatches(){
+      swatchesEl.innerHTML = "";
 
-        if (s.hex){
-          swatchChip[i].style.background = s.hex;
-          swatchText[i].textContent = `Slot ${i} — ${s.hex}`;
-        } else {
-          swatchChip[i].style.background = "repeating-linear-gradient(45deg,#f2f2f2,#f2f2f2 6px,#fff 6px,#fff 12px)";
-          swatchText[i].textContent = `Slot ${i} (vide)`;
-        }
-      }
+      state.colors.forEach((c, idx) => {
+        const n = idx + 1;
+
+        const container = document.createElement("div");
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "swatchBtn" + (idx === state.targetColorIndex ? " selected" : "");
+        btn.title = "Sélectionner cette couleur (et ouvrir le picker)";
+        btn.addEventListener("click", () => {
+          setTargetColor(idx);
+          picker.click();
+        });
+
+        const chip = document.createElement("span");
+        chip.className = "swatchChip";
+        chip.style.background = c.hex
+          ? c.hex
+          : "repeating-linear-gradient(45deg,#f2f2f2,#f2f2f2 6px,#fff 6px,#fff 12px)";
+
+        const text = document.createElement("span");
+        text.className = "swatchText";
+        text.textContent = c.hex ? `Couleur ${n} — ${c.hex}` : `Couleur ${n} (vide)`;
+
+        btn.appendChild(chip);
+        btn.appendChild(text);
+
+        // hidden color input for this row
+        const picker = document.createElement("input");
+        picker.type = "color";
+        picker.className = "hidden";
+        picker.value = c.hex || "#ff0000";
+        picker.addEventListener("input", (e) => setColor(idx, e.target.value, true));
+
+        // part row
+        const row = document.createElement("div");
+        row.className = "row";
+        row.style.marginTop = "10px";
+
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = `Couleur ${n}`;
+
+        const range = document.createElement("input");
+        range.type = "range";
+        range.min = "0";
+        range.max = "100";
+        range.value = String(c.part || 0);
+        range.addEventListener("input", (e) => {
+          state.colors[idx].part = Number(e.target.value);
+          valueSpan.textContent = String(state.colors[idx].part);
+          render();
+        });
+
+        const valBox = document.createElement("div");
+        valBox.className = "value";
+        const valueSpan = document.createElement("span");
+        valueSpan.textContent = String(c.part || 0);
+        valBox.appendChild(valueSpan);
+        valBox.appendChild(document.createTextNode("%"));
+
+        row.appendChild(label);
+        row.appendChild(range);
+        row.appendChild(valBox);
+
+        container.appendChild(btn);
+        container.appendChild(picker);
+        container.appendChild(row);
+
+        swatchesEl.appendChild(container);
+      });
     }
 
-    // Clicking swatch uses normal color picker
-    for (let i=1;i<=3;i++){
-      swatchBtn[i].addEventListener("click", () => {
-        colorInput[i].click();
-      });
-      colorInput[i].addEventListener("input", (e) => {
-        setSlotColor(i-1, e.target.value);
-      });
-    }
-
-    // Pipette buttons per slot
-    $("pick1").addEventListener("click", async () => {
-      try { setSlotColor(0, await eyedropperPick()); }
-      catch(e){ alert("Pipette indisponible ici. Essaie Chrome/Edge, ou utilise le sélecteur de couleur."); }
-    });
-    $("pick2").addEventListener("click", async () => {
-      try { setSlotColor(1, await eyedropperPick()); }
-      catch(e){ alert("Pipette indisponible ici. Essaie Chrome/Edge, ou utilise le sélecteur de couleur."); }
-    });
-    $("pick3").addEventListener("click", async () => {
-      try { setSlotColor(2, await eyedropperPick()); }
-      catch(e){ alert("Pipette indisponible ici. Essaie Chrome/Edge, ou utilise le sélecteur de couleur."); }
+    $("addColorBtn").addEventListener("click", () => {
+      state.colors.push({ hex: null, part: 0 });
+      // select the new color as target
+      setTargetColor(state.colors.length - 1);
+      renderSwatches();
+      render();
     });
 
-    // FREE sliders
-    for (let i=1;i<=3;i++){
-      p[i].addEventListener("input", (e) => {
-        state.slots[i-1].part = Number(e.target.value);
-        pv[i].textContent = state.slots[i-1].part;
-        render();
-      });
-    }
+    // ---- Image sampler ----
+    const imgUploadBtn = $("imgUploadBtn");
+    const imgDeleteBtn = $("imgDeleteBtn");
+    const imgFile = $("imgFile");
+    const imgCanvas = $("imgCanvas");
+    const ctx = imgCanvas.getContext("2d", { willReadFrequently: true });
 
-    // CMY sliders
-    ["c","m","y"].forEach((k) => {
-      inputsCMY[k].addEventListener("input", (e) => {
-        state[k] = Number(e.target.value);
-        render();
-      });
+    imgUploadBtn.addEventListener("click", () => imgFile.click());
+
+    imgFile.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+
+      img.onload = () => {
+        const wrap = imgCanvas.parentElement;
+        const maxW = wrap.clientWidth;
+
+        // always fit to width, keep height (scroll container handles tall)
+        const scale = maxW / img.width;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+
+        imgCanvas.width = w;
+        imgCanvas.height = h;
+
+        ctx.clearRect(0,0,w,h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        state.imgLoaded = true;
+        imgDeleteBtn.classList.remove("hidden");
+        setTargetColor(state.targetColorIndex);
+
+        URL.revokeObjectURL(url);
+      };
+
+      img.onerror = () => {
+        alert("Impossible de charger l’image.");
+        URL.revokeObjectURL(url);
+      };
+
+      img.src = url;
     });
 
-    // White / Black buttons
-    $("whitePlus").addEventListener("click", () => { state.white = clamp01(state.white + state.step); render(); });
-    $("whiteMinus").addEventListener("click", () => { state.white = clamp01(state.white - state.step); render(); });
-    $("blackPlus").addEventListener("click", () => { state.black = clamp01(state.black + state.step); render(); });
-    $("blackMinus").addEventListener("click", () => { state.black = clamp01(state.black - state.step); render(); });
+    imgDeleteBtn.addEventListener("click", () => {
+      ctx.clearRect(0,0,imgCanvas.width,imgCanvas.height);
+      imgCanvas.width = 0;
+      imgCanvas.height = 0;
+      imgFile.value = "";
+      state.imgLoaded = false;
+      imgDeleteBtn.classList.add("hidden");
+      setTargetColor(state.targetColorIndex);
+    });
 
-    // Reset
+    imgCanvas.addEventListener("click", (ev) => {
+      if (!state.imgLoaded || imgCanvas.width === 0) return;
+
+      const rect = imgCanvas.getBoundingClientRect();
+      const x = Math.floor((ev.clientX - rect.left) * (imgCanvas.width / rect.width));
+      const y = Math.floor((ev.clientY - rect.top) * (imgCanvas.height / rect.height));
+
+      const cx = Math.min(imgCanvas.width-1, Math.max(0, x));
+      const cy = Math.min(imgCanvas.height-1, Math.max(0, y));
+
+      const data = ctx.getImageData(cx, cy, 1, 1).data;
+      const hex = rgbToHex({ r:data[0], g:data[1], b:data[2] });
+
+      setColor(state.targetColorIndex, hex, true);
+    });
+
+    // ---- Reset ----
     $("reset").addEventListener("click", () => {
-      // CMY empty
       state.c = 0; state.m = 0; state.y = 0;
-      inputsCMY.c.value = 0; inputsCMY.m.value = 0; inputsCMY.y.value = 0;
+      cIn.value = 0; mIn.value = 0; yIn.value = 0;
 
-      // FREE empty
-      state.slots = [
+      state.colors = [
         { hex: null, part: 0 },
         { hex: null, part: 0 },
         { hex: null, part: 0 },
       ];
-      for (let i=1;i<=3;i++){
-        p[i].value = 0;
-        pv[i].textContent = "0";
-      }
+      state.targetColorIndex = 0;
 
-      // white/black
       state.white = 0;
       state.black = 0;
 
+      setTargetColor(0);
+      renderSwatches();
       render();
     });
 
+    // ---- Render ----
     function render(){
-      // CMY values
-      valsCMY.c.textContent = state.c;
-      valsCMY.m.textContent = state.m;
-      valsCMY.y.textContent = state.y;
+      cVal.textContent = state.c;
+      mVal.textContent = state.m;
+      yVal.textContent = state.y;
 
-      // Base color by mode
       let base;
       if (state.mode === "CMY"){
         base = cmyToRgb(state.c/100, state.m/100, state.y/100);
       } else {
-        base = mixFreeSlots(state.slots);
+        base = mixFree(state.colors);
       }
 
       const out = applyWhiteBlack(base, state.white, state.black);
@@ -604,19 +663,11 @@
 
       whitePct.textContent = Math.round(state.white*100) + "%";
       blackPct.textContent = Math.round(state.black*100) + "%";
-
-      updateSwatchUI();
-
-      // Note pipette support
-      const note = $("pipetteNote");
-      if ("EyeDropper" in window){
-        note.textContent = "Pipette : disponible (selon permissions d’iframe).";
-      } else {
-        note.textContent = "Pipette : non supportée par ce navigateur. Utilise le sélecteur de couleur.";
-      }
     }
 
     // Init
+    renderSwatches();
+    setTargetColor(0);
     render();
   </script>
 </body>
