@@ -437,6 +437,25 @@
     $("whiteMinus").addEventListener("click", ()=>{ state.white = clamp01(state.white - state.step); render(); });
     $("blackPlus").addEventListener("click", ()=>{ state.black = clamp01(state.black + state.step); render(); });
     $("blackMinus").addEventListener("click", ()=>{ state.black = clamp01(state.black - state.step); render(); });
+	  
+	function sendHeight(){
+  const h = document.documentElement.scrollHeight;
+  window.parent.postMessage(
+    { type: "cmy-resize", height: h },
+    "*"
+  );
+}
+
+// envoie après chaque rendu
+const _render = render;
+render = function(){
+  _render();
+  sendHeight();
+};
+
+// et aussi quand la fenêtre change
+window.addEventListener("resize", sendHeight);
+
 
     // ---- Swatches dynamic rendering ----
     const swatchesEl = $("swatches");
