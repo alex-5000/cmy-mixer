@@ -381,7 +381,16 @@
         s.appendChild(card);
         $(`btn-${i}`).onclick = () => { state.targetColorIndex = i; renderSwatches(); $(`pk-${i}`).click(); };
         $(`pk-${i}`).oninput = (e) => { state.colors[i].hex = e.target.value; state.colors[i].part = 100; renderSwatches(); render(); };
-        $(`rng-${i}`).oninput = (e) => { state.colors[i].part = Number(e.target.value); renderSwatches(); render(); };
+        
+        // --- FIX : On met à jour sans redessiner toute la liste (renderSwatches) ---
+        $(`rng-${i}`).oninput = (e) => { 
+          const val = Number(e.target.value);
+          state.colors[i].part = val;
+          // Met à jour le texte du % (l'élément suivant l'input)
+          e.target.nextElementSibling.textContent = val + "%"; 
+          render(); 
+        };
+
         $(`del-${i}`).onclick = () => { if(state.colors.length>1) { state.colors.splice(i,1); renderSwatches(); render(); }};
       });
     }
