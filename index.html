@@ -12,6 +12,11 @@ Cette méthode est la plus robuste car elle surveille en temps réel les changem
   <style>
     :root { --gap: 14px; --radius: 14px; }
 
+    html, body {
+    height: auto !important;
+    min-height: 100%;
+    }
+
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -394,12 +399,18 @@ Cette méthode est la plus robuste car elle surveille en temps réel les changem
 
     // ---- iframe auto-height (postMessage) ----
     // On utilise offsetHeight du wrapper principal pour une précision maximale
-    function sendHeight(){
-      requestAnimationFrame(() => {
-        const h = document.getElementById('mainWrap').offsetHeight;
-        window.parent.postMessage({ type: "cmy-resize", height: h + 20 }, "*");
-      });
+function sendHeight() {
+  // On utilise setTimeout pour s'assurer que Safari a fini de calculer le layout
+  setTimeout(() => {
+    const mainWrap = document.getElementById('mainWrap');
+    if (mainWrap) {
+      // getBoundingClientRect est souvent plus précis que offsetHeight sur Safari
+      const h = mainWrap.getBoundingClientRect().height;
+      // On envoie '*' pour l'origine si vous n'êtes pas sûr du domaine Moodle
+      window.parent.postMessage({ type: "cmy-resize", height: h + 20 }, "*");
     }
+  }, 50); 
+}
 
     // Utilisation d'un ResizeObserver pour détecter tout changement de taille automatique (onglets, images, etc.)
     const ro = new ResizeObserver(entries => {
@@ -726,3 +737,4 @@ Cette méthode est la plus robuste car elle surveille en temps réel les changem
 </html>
 
 ```
+
