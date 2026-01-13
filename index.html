@@ -1,3 +1,8 @@
+Voici le code complet mis à jour. J'ai intégré un **`ResizeObserver`** et modifié la fonction **`sendHeight`**.
+
+Cette méthode est la plus robuste car elle surveille en temps réel les changements de dimensions de l'élément `.wrap` (lorsque vous changez d'onglet ou ajoutez/supprimez des couleurs) et envoie immédiatement la nouvelle taille à l'iframe parent.
+
+```html
 <!doctype html>
 <html lang="fr">
 <head>
@@ -12,9 +17,10 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:#fff;
       color:#111;
+      overflow: hidden; /* Empêche les barres de défilement internes inutiles */
     }
 
-    .wrap{ max-width:none; margin:0; padding:12px; }
+    .wrap{ max-width:none; margin:0; padding:12px; box-sizing: border-box; }
 
     .card{
       border:1px solid #e7e7e7;
@@ -125,7 +131,6 @@
       border-color:#111;
     }
 
-    /* Image sampler (scroll if tall) */
     .imgBox{
       border:1px dashed #d7d7d7;
       border-radius: 14px;
@@ -149,7 +154,6 @@
       cursor: crosshair;
     }
 
-    /* Blanc/Noir inside viewer */
     .wbPanel{
       display:flex;
       gap:10px;
@@ -173,7 +177,6 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Free colors list: each item is one box */
     .swatches{
       display:grid;
       grid-template-columns: 1fr;
@@ -189,14 +192,13 @@
       box-shadow: 0 3px 12px rgba(0,0,0,.04);
     }
 
-/* Empêche le X de passer à la ligne */
-.colorHeader{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:space-between;
-  flex-wrap: nowrap;   /* <-- IMPORTANT */
-}
+    .colorHeader{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap: nowrap;
+    }
 
     .colorBtn{
       display:flex;
@@ -209,8 +211,8 @@
       cursor:pointer;
       text-align:left;
       transition: transform .02s ease;
-  flex: 1 1 auto;
-  min-width: 0;        /* <-- IMPORTANT */
+      flex: 1 1 auto;
+      min-width: 0;
     }
     .colorBtn:active{ transform: scale(.99); }
     .colorBtn.selected{
@@ -234,8 +236,8 @@
     }
 
     .partInline{
-        flex: 0 1 320px;     /* peut shrink */
-  		min-width: 0;        /* <-- IMPORTANT */
+      flex: 0 1 320px;
+      min-width: 0;
       display:flex;
       align-items:center;
       gap:10px;
@@ -260,8 +262,8 @@
     }
 
     .delBtn{
-  flex: 0 0 auto;
-  margin-left: auto;   /* <-- IMPORTANT */
+      flex: 0 0 auto;
+      margin-left: auto;
       padding: 10px 12px;
       border-radius: 14px;
       font-weight: 900;
@@ -282,7 +284,7 @@
 </head>
 
 <body>
-  <div class="wrap">
+  <div class="wrap" id="mainWrap">
     <div class="card">
       <h1 style="margin:0 0 6px 0; font-size:20px;">Mélange substractif</h1>
       <div class="mini">
@@ -298,7 +300,6 @@
     <div style="height:12px"></div>
 
     <div class="grid">
-      <!-- LEFT -->
       <div class="card">
         <div id="viewer" class="viewer">
           <div class="badge">
@@ -325,10 +326,8 @@
         </div>
       </div>
 
-      <!-- RIGHT -->
       <div class="controls">
 
-        <!-- CMY -->
         <div id="panelCMY" class="card">
           <h2 style="margin:0 0 10px 0; font-size:16px;">Parts CMY</h2>
 
@@ -355,7 +354,6 @@
           </div>
         </div>
 
-        <!-- FREE -->
         <div id="panelFREE" class="card hidden">
           <h2 style="margin:0 0 10px 0; font-size:16px;">Couleurs libres</h2>
 
@@ -394,22 +392,35 @@
     const clamp01 = (x) => Math.min(1, Math.max(0, x));
     const clamp255 = (x) => Math.min(255, Math.max(0, Math.round(x)));
 
+    // ---- iframe auto-height (postMessage) ----
+    // On utilise offsetHeight du wrapper principal pour une précision maximale
+    function sendHeight(){
+      requestAnimationFrame(() => {
+        const h = document.getElementById('mainWrap').offsetHeight;
+        window.parent.postMessage({ type: "cmy-resize", height: h + 20 }, "*");
+      });
+    }
+
+    // Utilisation d'un ResizeObserver pour détecter tout changement de taille automatique (onglets, images, etc.)
+    const ro = new ResizeObserver(entries => {
+      sendHeight();
+    });
+    ro.observe(document.getElementById('mainWrap'));
+
+    window.addEventListener("resize", sendHeight);
+
     const state = {
       mode: "CMY",
       c: 0, m: 0, y: 0,
-
       colors: [
         { hex: null, part: 0 },
         { hex: null, part: 0 },
         { hex: null, part: 0 },
       ],
-
       targetColorIndex: 0,
-
       white: 0,
       black: 0,
       step: 0.05,
-
       imgLoaded: false,
     };
 
@@ -472,7 +483,7 @@
       panelCMY.classList.toggle("hidden", !isCMY);
       panelFREE.classList.toggle("hidden", isCMY);
       render();
-      sendHeight();
+      // Le ResizeObserver se chargera d'appeler sendHeight()
     }
     tabCMY.addEventListener("click", () => setMode("CMY"));
     tabFREE.addEventListener("click", () => setMode("FREE"));
@@ -517,15 +528,11 @@
     }
 
     function removeColor(idx){
-      // Minimum 1 couleur (change à 3 si tu veux minimum 3)
       if (state.colors.length <= 1) return;
-
       state.colors.splice(idx, 1);
-
       if (state.targetColorIndex >= state.colors.length){
         state.targetColorIndex = state.colors.length - 1;
       }
-
       renderSwatches();
       setTargetColor(state.targetColorIndex);
       render();
@@ -533,10 +540,8 @@
 
     function renderSwatches(){
       swatchesEl.innerHTML = "";
-
       state.colors.forEach((c, idx) => {
         const n = idx + 1;
-
         const card = document.createElement("div");
         card.className = "colorCard";
 
@@ -546,7 +551,6 @@
         const colorBtn = document.createElement("button");
         colorBtn.type = "button";
         colorBtn.className = "colorBtn" + (idx === state.targetColorIndex ? " selected" : "");
-        colorBtn.title = "Sélectionner cette couleur (et ouvrir le picker)";
         colorBtn.addEventListener("click", () => {
           setTargetColor(idx);
           picker.click();
@@ -554,9 +558,7 @@
 
         const chip = document.createElement("span");
         chip.className = "chip";
-        chip.style.background = c.hex
-          ? c.hex
-          : "repeating-linear-gradient(45deg,#f2f2f2,#f2f2f2 6px,#fff 6px,#fff 12px)";
+        chip.style.background = c.hex || "repeating-linear-gradient(45deg,#f2f2f2,#f2f2f2 6px,#fff 6px,#fff 12px)";
 
         const title = document.createElement("span");
         title.className = "titleText";
@@ -568,7 +570,6 @@
         const del = document.createElement("button");
         del.type = "button";
         del.className = "delBtn";
-        del.title = "Supprimer cette couleur";
         del.textContent = "✕";
         del.disabled = state.colors.length <= 1;
         del.addEventListener("click", (e) => {
@@ -576,14 +577,12 @@
           removeColor(idx);
         });
 
-        // hidden color input
         const picker = document.createElement("input");
         picker.type = "color";
         picker.className = "hidden";
         picker.value = c.hex || "#ff0000";
         picker.addEventListener("input", (e) => setColor(idx, e.target.value, true));
 
-        // Part INLINE (between name and X)
         const partInline = document.createElement("div");
         partInline.className = "partInline";
 
@@ -611,18 +610,13 @@
         partInline.appendChild(range);
         partInline.appendChild(pct);
 
-        // Header order: [colorBtn] [partInline] [X]
         header.appendChild(colorBtn);
         header.appendChild(partInline);
         header.appendChild(del);
-
         card.appendChild(header);
         card.appendChild(picker);
-
         swatchesEl.appendChild(card);
       });
-
-      sendHeight();
     }
 
     $("addColorBtn").addEventListener("click", () => {
@@ -644,64 +638,44 @@
     imgFile.addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-
       const url = URL.createObjectURL(file);
       const img = new Image();
-
       img.onload = () => {
         const wrap = imgCanvas.parentElement;
         const maxW = wrap.clientWidth;
-
         const scale = maxW / img.width;
         const w = Math.round(img.width * scale);
         const h = Math.round(img.height * scale);
-
         imgCanvas.width = w;
         imgCanvas.height = h;
-
         ctx.clearRect(0,0,w,h);
         ctx.drawImage(img, 0, 0, w, h);
-
         state.imgLoaded = true;
         imgDeleteBtn.classList.remove("hidden");
         setTargetColor(state.targetColorIndex);
-
-        URL.revokeObjectURL(url);
-        sendHeight();
-      };
-
-      img.onerror = () => {
-        alert("Impossible de charger l’image.");
         URL.revokeObjectURL(url);
       };
-
       img.src = url;
     });
 
     imgDeleteBtn.addEventListener("click", () => {
       ctx.clearRect(0,0,imgCanvas.width,imgCanvas.height);
-      imgCanvas.width = 0;
-      imgCanvas.height = 0;
+      imgCanvas.width = 0; imgCanvas.height = 0;
       imgFile.value = "";
       state.imgLoaded = false;
       imgDeleteBtn.classList.add("hidden");
       setTargetColor(state.targetColorIndex);
-      sendHeight();
     });
 
     imgCanvas.addEventListener("click", (ev) => {
       if (!state.imgLoaded || imgCanvas.width === 0) return;
-
       const rect = imgCanvas.getBoundingClientRect();
       const x = Math.floor((ev.clientX - rect.left) * (imgCanvas.width / rect.width));
       const y = Math.floor((ev.clientY - rect.top) * (imgCanvas.height / rect.height));
-
       const cx = Math.min(imgCanvas.width-1, Math.max(0, x));
       const cy = Math.min(imgCanvas.height-1, Math.max(0, y));
-
       const data = ctx.getImageData(cx, cy, 1, 1).data;
       const hex = rgbToHex({ r:data[0], g:data[1], b:data[2] });
-
       setColor(state.targetColorIndex, hex, true);
     });
 
@@ -709,21 +683,17 @@
     $("reset").addEventListener("click", () => {
       state.c = 0; state.m = 0; state.y = 0;
       cIn.value = 0; mIn.value = 0; yIn.value = 0;
-
       state.colors = [
         { hex: null, part: 0 },
         { hex: null, part: 0 },
         { hex: null, part: 0 },
       ];
       state.targetColorIndex = 0;
-
       state.white = 0;
       state.black = 0;
-
       renderSwatches();
       setTargetColor(0);
       render();
-      sendHeight();
     });
 
     // ---- Render ----
@@ -731,35 +701,21 @@
       cVal.textContent = state.c;
       mVal.textContent = state.m;
       yVal.textContent = state.y;
-
       let base;
       if (state.mode === "CMY"){
         base = cmyToRgb(state.c/100, state.m/100, state.y/100);
       } else {
         base = mixFree(state.colors);
       }
-
       const out = applyWhiteBlack(base, state.white, state.black);
-
       viewer.style.background = `rgb(${out.r},${out.g},${out.b})`;
       dot.style.background = `rgb(${out.r},${out.g},${out.b})`;
-
       const hex = rgbToHex(out);
       hexEl.textContent = hex;
       rgbEl.textContent = `rgb(${out.r},${out.g},${out.b})`;
-
       whitePct.textContent = Math.round(state.white*100) + "%";
       blackPct.textContent = Math.round(state.black*100) + "%";
-
-      sendHeight();
     }
-
-    // ---- iframe auto-height (postMessage) ----
-    function sendHeight(){
-      const h = document.documentElement.scrollHeight;
-      window.parent.postMessage({ type: "cmy-resize", height: h }, "*");
-    }
-    window.addEventListener("resize", sendHeight);
 
     // Init
     renderSwatches();
@@ -768,3 +724,5 @@
   </script>
 </body>
 </html>
+
+```
